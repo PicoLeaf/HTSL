@@ -4,10 +4,14 @@
   "main": "server.js",
   "scripts": {
     "start": "node src/server",
-    "build": "#tsc server"
+    "build": "#tsc server",
+    "test": "jest"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": ""
+  "description": "",
+  "devDependencies": {
+    "jest": "^27.0.4"
+  }
 }
