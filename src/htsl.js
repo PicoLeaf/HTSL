@@ -1,18 +1,7 @@
-const fs =  require('fs');
-const http = require('http');
-
-// getting the config
-const configFormat = new Config({
-    path: new Field('string', './htdocs'),
-    host: new Field('string', 'localhost'),
-    port: new Field('number', 8000).restrictLength(4),
-    fileformat: new Field('string', 'utf-8')
-});
+const fs = require('fs');
 
 const values = {};
 const systemValues = {true: true, false: false, undefined: undefined, null: null, NaN: NaN};
-
-var config = {};
 
 const opperators = [
     // new Opperator("**", (a, b) => a ** b),
@@ -25,86 +14,18 @@ const opperators = [
     // new Opperator("||", (a, b) => a || b),
     // new Opperator("!=", (a, b) => a - b),
     // new a
-    ("==", (a, b) => a - b),
+    // new Opperator("==", (a, b) => a - b),
     new Opperator(">", (a, b) => a > b),
     new Opperator("<", (a, b) => a < b),
     // new Opperator(">=", (a, b) => a >= b),
     // new Opperator("<=", (a, b) => a <= b),
 ];
 
-const singleBalises = ["meta", "br"]
+const singleBalises = ["meta", "br"];
 
-startServer();
+let config = {};
 
-function startServer() {
-    fs.readFile('./config.json', (err, data) => {
-        if (err && err.code === 'ENOENT') {
-            console.log('missing config files, creating it...');
-            
-            config = createConfigFiles();
-            
-            console.log(config);
-            
-            server.listen(config.port, config.host, () => {
-                console.log("server started at http://"+config.host+":"+config.port);
-            });
-        }else {
-            try {
-                // I know I shouldn't really doing it this way but it work, so...
-                var text = JSON.parse(data.toString());
-            } catch (error) {
-                console.log("invalid config file, json is malformed, creating a new config file...");
-                
-                var text = createConfigFiles();
-            }
-            
-            if (configFormat.isValid(text)) {
-                config = text;
-                
-                server.listen(config.port, config.host, () => {
-                    console.log("server started at http://"+config.host+":"+config.port);
-                });
-            }else {
-                console.log("Incorect config file, deleting the old one...");
-                
-                deprecateOldConfigFile();
-                config = createConfigFiles();
-                
-                server.listen(config.port, config.host, () => {
-                    console.log("server started at http://"+config.host+":"+config.port);
-                });
-            }
-        }
-    });
-}
-
-function createConfigFiles() {
-    let defaultConfig = configFormat.getDefaultConfig();
-    
-    fs.writeFile('./config.json', defaultConfig, (err) => {
-        if (err) {
-            console.log('Unable to create config file, aborting...');
-            console.error(err);
-            
-            process.exit();
-        }
-    });
-    
-    console.log('done!')
-    return JSON.parse(defaultConfig);
-}
-
-function deprecateOldConfigFile() {
-    fs.access('./old_config.json', err => {
-        if (!err) {
-            fs.rmSync('./old_config.json');
-        }
-    });
-    fs.renameSync('./config.json', './old_config.json');
-}
-
-
-const server = http.createServer((req, res) => {
+function requestHandler(req, res, config) {
     res.setHeader("Content-Type", "text/html");
     let path = req.url;
     
@@ -144,8 +65,7 @@ const server = http.createServer((req, res) => {
             }
         }
     });
-});
-
+}
 
 function parseHTSL(lines, url) {
     var final = "";
@@ -211,8 +131,6 @@ function parseHTSL(lines, url) {
                 if (name === "!doctype") {
                     var modifiedBalise = balise.slice(0, name.length)+" html";
                     
-                    console.log(modifiedBalise);
-                    
                     i += modifiedBalise.length+2;
                     final += "<"+modifiedBalise+">";
                 }else {
@@ -275,6 +193,7 @@ function parseEquation(equation, opperatorIndex) {
     }
     
     opperator = opperators[opperatorIndex];
+
     /*
     Meaning:
     a is before the equation
@@ -456,80 +375,6 @@ function getValue(value) {
 
 // END OF THE PARSING VALUES PART
 
-function Config(config) {
-    this.config = config;
-}
-
-Config.prototype.getDefaultConfig = function() {
-    // I know I could use some JSON.stringify stuff, but it seems simplier and more flexible to do it this way
-    
-    let json = new String();
-    
-    json += "{\r\n";
-    
-    const Entries = Object.entries(this.config);
-    
-    // I can't quite choose between forEach or for on this one, lets go for foreach since it is apparently more optimised
-    Entries.forEach((field, i) => {
-        json += `\t"${field[0]}": ${JSON.stringify(field[1].defaultData)}${i !== Entries.length-1? ',':''}\r\n`;
-    });
-    
-    json += "}";
-    
-    return json;
-}
-
-Config.prototype.isValid = function(config) {
-    const Entries = Object.entries(this.config);
-    
-    for (let i = 0; i < Entries.length; i++) {
-        const field = Entries[i];
-        const object = config[field[0]];
-        
-        if (typeof object !== field[1].type) {
-            // TODO give a error object with more info in it
-            return false;
-        }else if (field[1].hasRestrictedLength) {
-            if (typeof object === "number") {
-                // the object+"" to transform it to string is kinda dirty but I forgot how to do it properly
-                if (!((object+"").length <= field[1].minLength && (object+"").length >= field[1].maxLength)) {
-                    return false;
-                }
-            }else if (!(object.length <= field[1].minLength && object.length >= field[1].maxLength)) {
-                return false;
-            }
-        }
-    }
-    
-    return true;
-}
-
-/**
- * 
- * @param {string} type 
- * @param {*} defaultData 
- */
-function Field(type, defaultData) {
-    this.type = type;
-    this.defaultData = defaultData;
-    
-    this.restrictLength = function(minLength, maxLength) {
-        this.minLength = minLength;
-        this.maxLength = maxLength ?? minLength;
-        this.hasRestrictedLength = true;
-        
-        return this;
-    }
-
-    this.range = function(min, max) {
-        this.min = min;
-        this.max = max;
-        this.hasRestrictedRange = true;
-        
-        return this;
-    }
-}
-
 /**
  * 
  * @param {number} num 
@@ -556,7 +401,8 @@ function ErrorType(num, text) {
 const ErrorTypes = {
     200: new ErrorType(200, "OK"),
     500: new ErrorType(500, "Internal Server Error"),
-    404: new ErrorType(404, "File Not Found")},
+    404: new ErrorType(404, "File Not Found")
+}
 
 /**
 * 
@@ -619,3 +465,9 @@ const DataTypes = {
     boolean: new DataType().expectedValues(false, true).defaultValue(false),
     undefined: new DataType().expectedValues(undefined).defaultValue(undefined)
 };
+
+// passes over everything
+module.exports = {
+    requestHandler,
+    parseHTSL
+}
