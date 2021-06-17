@@ -13,7 +13,7 @@ const opperators = [
     // new Opperator("&&", (a, b) => a && b),
     // new Opperator("||", (a, b) => a || b),
     // new Opperator("!=", (a, b) => a - b),
-    // new a
+    // new 
     // new Opperator("==", (a, b) => a - b),
     new Opperator(">", (a, b) => a > b),
     new Opperator("<", (a, b) => a < b),
@@ -22,8 +22,6 @@ const opperators = [
 ];
 
 const singleBalises = ["meta", "br"];
-
-let config = {};
 
 function requestHandler(req, res, config) {
     res.setHeader("Content-Type", "text/html");

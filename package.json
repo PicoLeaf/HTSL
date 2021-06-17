@@ -5,12 +5,14 @@
   "scripts": {
     "start": "node src/server",
     "build": "#tsc server",
-    "test": "jest"
+    "test": "jest --verbose",
+    "push": "git add . && read 'Input the commit name: ' NAME && git commit -m \"$NAME\" && git push"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
+  "_comment": "not sure jest is supposed to be a dev dependencies, but it works, sooo, I am going to git rid of it as soon as I am done anyways",
   "devDependencies": {
     "jest": "^27.0.4"
   }
