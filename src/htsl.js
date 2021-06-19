@@ -3,6 +3,7 @@ const fs = require('fs');
 const values = {};
 const systemValues = {true: true, false: false, undefined: undefined, null: null, NaN: NaN};
 
+// some opperators are commented because they are 2 characters long, which isn't implemented yet
 const opperators = [
     // new Opperator("**", (a, b) => a ** b),
     new Opperator("*", (a, b) => a * b),
@@ -24,7 +25,11 @@ const opperators = [
 const singleBalises = ["meta", "br"];
 
 function requestHandler(req, res, config) {
-    res.setHeader("Content-Type", "text/html");
+    res.setHeader("Content-Type", "text/html; charset="+config.fileformat.toUpperCase());
+    if (config.serverNameIncludedInHTTPHeaders) {
+        res.setHeader("server", config.serverName);
+    }
+    
     let path = req.url;
     
     if (path.endsWith('/')) {

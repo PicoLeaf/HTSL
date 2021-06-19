@@ -8,7 +8,9 @@ const configFormat = new Config({
     path: new Field('string', './htdocs'),
     host: new Field('string', 'localhost'),
     port: new Field('number', 8000).restrictLength(4),
-    fileformat: new Field('string', 'utf-8')
+    fileformat: new Field('string', 'utf-8'),
+    serverName: new Field('string', 'NodeJS.htslserver'),
+    serverNameIncludedInHTTPHeaders: new Field('boolean', true)
 });
 
 const configPath = './config.json';
