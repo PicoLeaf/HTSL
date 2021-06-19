@@ -130,9 +130,8 @@ function parseEquation(equation) {
             const char = parsedEquation[i];
             
             if (char === opperator.chars[0]) {
-                console.log("ITS THE RIGHT ONE!")
-                c = parsedEquation.slice(0, i-1);
-                finished = true;
+                c = parsedEquation.slice(0, i-a.length);
+
                 for (let h = i+1; !parsedCharsOnlyOpperators.includes(parsedEquation[h]) && h < parsedEquationLength; h++) {
                     b += parsedEquation[h];
                     if (parsedCharsOnlyOpperators.includes(parsedEquation[h+1])) {
@@ -144,14 +143,18 @@ function parseEquation(equation) {
                 console.log("c:"+c);
                 console.log("d:"+d);
                 if (c !== "" || d !== "") {
+                    parsedEquation = parseEquation(c + opperator.execute(getValue(a), getValue(b)) + d);
+                    
                     // holly mushroom, seems like a terrible idea
                     // might cause infinite recursion
-                    parsedEquation = parseEquation(c + opperator.execute(getValue(a), getValue(b)) + d);
+
+                    // UPDATE: it does only when my code is bad, so it should be fine... right?
+                    // could be enhanced by moving the cursor to the start of the equation instead, could produce a infinite loop instead 
                 }else {
                     parsedEquation = opperator.execute(getValue(a), getValue(b));
                 }
             }else if (parsedCharsOnlyOpperators.includes(char)) {
-                a = char;
+                a = "";
             }else {
                 a += char;
             }
@@ -162,11 +165,11 @@ function parseEquation(equation) {
 }
 
 console.time();
-console.log(parseEquation("1+1"));
+console.log(parseEquation("6+4+1"));
 console.timeEnd();
 
-// MONOLOGUE OF THE SOFTWARE DEVELOPER THAT REALISE THAT HIS OPTIMISATIONS (that he spent days on) ARE SLOWER:
-// about 9 ms, about 2-1 ms slower than the other one
+// MONOLOGUE OF THE SOFTWARE DEVELOPER THAT REALISES THAT HIS OPTIMISATIONS (that he spent days on) ARE SLOWER:
+// 9 ms, about 2-1 ms slower than the other one
 // why is it slower than the other??
 // is recursion faster?
 // but I optimised it so much more!?
@@ -174,7 +177,7 @@ console.timeEnd();
 // instead of one big loop
 // it could make sense
 
-/*
+
 it('unique number', () => {
     expect(parseEquation("9")).toBe(9);
 });
@@ -197,4 +200,8 @@ it('complex equation', () => {
 
 it('complex equation with parethese', () => {
     expect(parseEquation("(3+2)*5")).toBe(25);
-});*/
+});
+
+it('complex equation', () => {
+    expect(parseEquation("3+2*5")).toBe(13);
+});
