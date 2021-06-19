@@ -59,24 +59,24 @@ function getValue(value) {
     }
 }
 
-// equation parser:
+// Operation parser:
 
-function parseEquation(equation) {
+function parseOperation(operation) {
     // pretty much the same parenthese parser as before, expect it is the first thing runned
     
-    let parsedEquation = "";
-    const equationLength = equation.length;
+    let parsedOperation = "";
+    const operationLength = operation.length;
 
     const charsOnlyOpperators = opperators.map(a => a.chars[0]);
     let opperatorsIndex = [];
     
-    for (let i = 0; i < equationLength; i++) {
-        if (equation[i] === "(") {
+    for (let i = 0; i < operationLength; i++) {
+        if (operation[i] === "(") {
             let deepness = 0;
             let paretheseContent = "";
             
-            for (let h = i; !(equation[h] === ")" && deepness === 0) && h < equationLength; h++) {
-                const char = equation[h];
+            for (let h = i; !(operation[h] === ")" && deepness === 0) && h < operationLength; h++) {
+                const char = operation[h];
                 console.log(char);
                 
                 if (char === ")") {
@@ -95,27 +95,27 @@ function parseEquation(equation) {
             
             console.log("paretheseContent: "+ paretheseContent);
 
-            parsedEquation += parseEquation(paretheseContent);
+            parsedOperation += parseOperation(paretheseContent);
 
             // the +2 is for the two parentheses
             i += paretheseContent.length+2;
 
         }
-        parsedEquation += equation[i] ?? "";
+        parsedOperation += operation[i] ?? "";
 
-        if (charsOnlyOpperators.includes(equation[i])) {
-            opperatorsIndex.push(charsOnlyOpperators.indexOf(equation[i]));
+        if (charsOnlyOpperators.includes(operation[i])) {
+            opperatorsIndex.push(charsOnlyOpperators.indexOf(operation[i]));
         }
     }
     
     // I'm wondering if this is more optimised than
-    // parsedEquation.split().foreach
-    const parsedEquationLength = parsedEquation.length;
+    // parsedOperation.split().foreach
+    const parsedOperationLength = parsedOperation.length;
     
     const parsedOpperators = opperators.filter((a , i) => opperatorsIndex.includes(i));
     const parsedCharsOnlyOpperators = parsedOpperators.map(a => a.chars);
 
-    console.log("parsedEquation: "+ parsedEquation);
+    console.log("parsedOperation: "+ parsedOperation);
     
     var a = "",
         b = "",
@@ -123,19 +123,19 @@ function parseEquation(equation) {
         d = "";
     
         parsedOpperators.forEach(opperator => {
-        // c and d are the rest of the equation
+        // c and d are the rest of the operation
         a = "", b = "", c = "", d = "";
         
-        for (let i = 0; i < parsedEquationLength; i++) {
-            const char = parsedEquation[i];
+        for (let i = 0; i < parsedOperationLength; i++) {
+            const char = parsedOperation[i];
             
             if (char === opperator.chars[0]) {
-                c = parsedEquation.slice(0, i-a.length);
+                c = parsedOperation.slice(0, i-a.length);
 
-                for (let h = i+1; !parsedCharsOnlyOpperators.includes(parsedEquation[h]) && h < parsedEquationLength; h++) {
-                    b += parsedEquation[h];
-                    if (parsedCharsOnlyOpperators.includes(parsedEquation[h+1])) {
-                        d = parsedEquation.slice(h+1, parsedEquationLength);
+                for (let h = i+1; !parsedCharsOnlyOpperators.includes(parsedOperation[h]) && h < parsedOperationLength; h++) {
+                    b += parsedOperation[h];
+                    if (parsedCharsOnlyOpperators.includes(parsedOperation[h+1])) {
+                        d = parsedOperation.slice(h+1, parsedOperationLength);
                     }
                 }
                 console.log("a:"+a);
@@ -143,15 +143,15 @@ function parseEquation(equation) {
                 console.log("c:"+c);
                 console.log("d:"+d);
                 if (c !== "" || d !== "") {
-                    parsedEquation = parseEquation(c + opperator.execute(getValue(a), getValue(b)) + d);
+                    parsedOperation = parseOperation(c + opperator.execute(getValue(a), getValue(b)) + d);
                     
                     // holly mushroom, seems like a terrible idea
                     // might cause infinite recursion
 
                     // UPDATE: it does only when my code is bad, so it should be fine... right?
-                    // could be enhanced by moving the cursor to the start of the equation instead, could produce a infinite loop instead 
+                    // could be enhanced by moving the cursor to the start of the operation instead, could produce a infinite loop instead 
                 }else {
-                    parsedEquation = opperator.execute(getValue(a), getValue(b));
+                    parsedOperation = opperator.execute(getValue(a), getValue(b));
                 }
             }else if (parsedCharsOnlyOpperators.includes(char)) {
                 a = "";
@@ -161,11 +161,11 @@ function parseEquation(equation) {
         }
     });
     
-    return getValue(parsedEquation);
+    return getValue(parsedOperation);
 }
 
 console.time();
-console.log(parseEquation("6+4+1"));
+console.log(parseOperation("6+4+1"));
 console.timeEnd();
 
 // MONOLOGUE OF THE SOFTWARE DEVELOPER THAT REALISES THAT HIS OPTIMISATIONS (that he spent days on) ARE SLOWER:
@@ -179,29 +179,29 @@ console.timeEnd();
 
 
 it('unique number', () => {
-    expect(parseEquation("9")).toBe(9);
+    expect(parseOperation("9")).toBe(9);
 });
 
-it('simple equation', () => {
-    expect(parseEquation("6+4")).toBe(10);
+it('simple operation', () => {
+    expect(parseOperation("6+4")).toBe(10);
 });
 
-it('basic equation', () => {
-    expect(parseEquation("6+4+1")).toBe(11);
+it('basic operation', () => {
+    expect(parseOperation("6+4+1")).toBe(11);
 });
 
 it('basic opperation with parethese', () => {
-    expect(parseEquation("(6+5)+1")).toBe(12);
+    expect(parseOperation("(6+5)+1")).toBe(12);
 });
 
-it('complex equation', () => {
-    expect(parseEquation("3+2*5")).toBe(13);
+it('complex operation', () => {
+    expect(parseOperation("3+2*5")).toBe(13);
 });
 
-it('complex equation with parethese', () => {
-    expect(parseEquation("(3+2)*5")).toBe(25);
+it('complex operation with parethese', () => {
+    expect(parseOperation("(3+2)*5")).toBe(25);
 });
 
-it('complex equation', () => {
-    expect(parseEquation("3+2*5")).toBe(13);
+it('complex operation', () => {
+    expect(parseOperation("3+2*5")).toBe(13);
 });
