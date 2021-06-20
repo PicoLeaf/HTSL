@@ -3,24 +3,44 @@ const fs = require('fs');
 const values = {};
 const systemValues = {true: true, false: false, undefined: undefined, null: null, NaN: NaN};
 
-// some opperators are commented because they are 2 characters long, which isn't implemented yet
-const opperators = [
-    // new Opperator("**", (a, b) => a ** b),
-    new Opperator("*", (a, b) => a * b),
-    new Opperator("/", (a, b) => a / b),
-    new Opperator("%", (a, b) => a % b),
-    new Opperator("+", (a, b) => a + b),
-    new Opperator("-", (a, b) => a - b),
-    // new Opperator("&&", (a, b) => a && b),
-    // new Opperator("||", (a, b) => a || b),
-    // new Opperator("!=", (a, b) => a - b),
-    // new 
-    // new Opperator("==", (a, b) => a - b),
-    new Opperator(">", (a, b) => a > b),
-    new Opperator("<", (a, b) => a < b),
-    // new Opperator(">=", (a, b) => a >= b),
-    // new Opperator("<=", (a, b) => a <= b),
-];
+/**
+* 
+* @param {string} value 
+* @returns {string}
+*/
+function getValue(value) {
+    console.log(value);
+
+    let num = (value+"").match(/ *[0-9]+ */g);
+    num = num === null? NaN: num[0];
+    
+    if (Number.isFinite(num-0)) {
+        if (num.length === (value+"").length) {
+            return num-0;
+        }else {
+            console.log(value +" is not a valid number");
+            return systemValues["NaN"];
+        }
+    }else if ((value+"").match(/("|').+("|')/g) !== null) {
+        let obj = value.match(/("|').+("|')/g)[0];
+        obj = obj.slice(1, obj.length-1);
+        
+        return obj;
+    }else if (Object.entries(values).map(a => a[0]).includes(value)) {
+        return values[value];
+    }else if (Object.entries(systemValues).map(a => a[0]).includes(value)) {
+        return systemValues[value];
+    }
+}
+
+// passes over everything
+module.exports = {
+    requestHandler,
+    parseHTSL,
+    getValue
+}
+
+const { parseOperation } = require('./operation');
 
 const singleBalises = ["meta", "br"];
 
@@ -94,9 +114,9 @@ function parseHTSL(lines, url) {
                 if (name === "if") {
                     i += balise.length+name.length+content.length+5;
                     
-                    if (parseEquation(args[0]) === true) {
+                    if (parseOperation(args[0]) === true) {
                         final += parseHTSL(content);
-                    }else if (parseEquation(args[0]) !== false) {
+                    }else if (parseOperation(args[0]) !== false) {
                         return new Error(500, "Invalid argument: "+values[args[0]]+" :"+i);
                     }
                 }else if (name === "define") {
@@ -106,7 +126,7 @@ function parseHTSL(lines, url) {
                                 return new Error(500, "Cannot override the system variable \""+systemValues[args[1]]+"\" :"+i);
                             }else {
                                 console.log(args[1]);
-                                systemValues[args[1]] = parseEquation(parseHTSL(content));
+                                systemValues[args[1]] = parseOperation(parseHTSL(content));
                             }
                         }else {
                             return new Error(500, "Unable to define a variable called \"system\" "+values[args[0]]+" :"+i);
@@ -115,17 +135,17 @@ function parseHTSL(lines, url) {
                         if (Object.entries(systemValues).map(a => a[0]).includes(args[0])) {
                             return new Error(500, "The variable "+args[0]+" is already used by a system variable :"+(i/*-3-content.length-args.join(' ').length*/));
                         }else {
-                            values[args[0]] = parseEquation(parseHTSL(content));
+                            values[args[0]] = parseOperation(parseHTSL(content));
                         }
                     }
                     i += balise.length+name.length+content.length+5;
                     
                 }else if (name === "value") {
                     i += balise.length+name.length+content.length+5;
-                    final += parseEquation(content);
+                    final += parseOperation(content);
                 }else if (name === "debug") {
                     i += balise.length+name.length+content.length+5;
-                    console.log(parseEquation(content));
+                    console.log(parseOperation(content));
                 }else {
                     i += balise.length+2;
                     final += "<"+balise+">";
@@ -183,198 +203,6 @@ function isEndingBalise(line, pointer, expectedBalise) {
 }
 
 // START OF THE PARSING VALUES PART
-
-/**
-* 
-* @param {string} equation 
-* @param {Opperator} opperator 
-* @returns {string}
-*/
-function parseEquation(equation, opperatorIndex) {
-    if (!opperatorIndex) {
-        opperatorIndex = 0;
-    }
-    
-    opperator = opperators[opperatorIndex];
-
-    /*
-    Meaning:
-    a is before the equation
-    b is the first element of the equation
-    c is the second one
-    d is after the equation
-    */
-    var a = '',
-    b = '',
-    c = '',
-    d = ''
-    equationCompletion = 0,
-    action = null;
-    
-    for (let i = 0; i < equation.length; i++) {
-        
-        const cursorChar = equation[i];
-        
-        if (equationCompletion === 0) {
-            if (cursorChar === "(") {
-                let output = parseParentheseValue(i, equation);
-                
-                equationCompletion = 1;
-                opperator = opperators[opperatorIndex];
-                
-                i = output.cursor;
-                b += output.result;
-            }else if (equation[i+1] === opperator.chars[0]) {
-                // TODO fix this
-                // to make the long opperator work
-
-                if (opperator.chars.length > 1) {
-                    let condition = false,
-                    charPos = 1;
-                    for (let n = i+2; n < opperator.chars.length; n++, charPos++) {
-                        condition = condition && equation[array[n]] === opperator.chars[charPos];
-                    }
-                    if (condition) {
-                        b += equation[i];
-                        equationCompletion++;
-                        i+=charPos;
-                    }
-                }else {
-                    b += equation[i];
-                    equationCompletion++;
-                    i++;
-                }
-            }else if (opperators.map(a => a.chars[0]).includes(equation[i+1])) {
-                // TODO replace the search with opperators.find instead of this un optimised thing
-                // TODO make opperator longer than 1 char work
-                a += b + equation.slice(i, i+2);
-                b = "";
-                i++;
-            }else {
-                b += equation[i];
-            }
-        }else if (equationCompletion === 1) {
-            opperator = opperators[opperatorIndex];
-            if (cursorChar === "(") {
-                let output = parseParentheseValue(i, equation);
-                
-                c += output.result;
-                
-                i = output.cursor-1;
-                equationCompletion++;
-            }else if (opperator.chars[0] === equation[i+1]) {
-                // AER8GUIHOJPEK¨ZL%KMLEJHDJOFIGUY9ROUEPZJKL?SMDKNBJFGURIEHOYUZPJLSM?NKDBJFIUGRYE890UOPZIKMLS?DNKBOFHUGIR
-                if (opperator.chars.length > 1) {
-                    // TODO make the long opperator work
-                    let condition = false,
-                    charPos = 1;
-                    for (let n = i+2; n < opperator.chars.length; n++, charPos++) {
-                        condition = condition && equation[array[n]] === opperator.chars[charPos];
-                    }
-                    if (condition) {
-                        c += equation[i];
-                        equationCompletion++;
-                    }
-                }else {
-                    i++;
-                    c += equation[i];
-                    equationCompletion++;
-                }
-            }else {
-                c += equation[i];
-            }
-        }else {
-            d += equation[i];
-        }
-    }
-    
-    /*
-    console.log("a:"+a);
-    console.log("b:"+b);
-    console.log("c:"+c);
-    console.log("d:"+d);
-        used for debugin
-    */
-    
-    
-    // TODO optimise this function so it only do the opperators it saw earlier in the equation
-    // it would really make HTSL faster
-    
-    if (c !== '') {
-        const result = opperator.execute(getValue(b), getValue(c));
-        
-        return d !== '' || a !== '' ? parseEquation(a+result+d, opperatorIndex+1) : result;
-    }else if (a === '' && d === '') {
-        return getValue(b);
-    }
-    
-    if (a !== '' || d !== '') {
-        return a !== '' || d !== '' ? parseEquation(a+b+d, opperatorIndex+1) : result;
-    }
-    
-    
-}
-
-/**
-* 
-* @param {number} cursor 
-* @param {string} equation 
-* @returns {Object}
-*/
-function parseParentheseValue(cursor, equation) {
-    let content = new String();
-    let deepness = 0;
-    
-    for (let h = cursor; !(equation[h+1] === ')' && deepness === 0) && h < equation.length; h++) {
-        const char = equation[h];
-        
-        if (char === ')') {
-            deepness--;
-        }
-        
-        if (deepness > 0) {
-            content += char;
-        }
-        
-        if (char === '(') {
-            deepness++;
-        }
-    }
-    
-    cursor += content.length+2;
-    
-    if (content.length > 1) {
-        return {result: parseEquation(content), cursor: cursor};
-    }else {
-        return {result: content, cursor: cursor};
-    }
-}
-
-/**
-* 
-* @param {string} value 
-* @returns {string}
-*/
-function getValue(value) {
-    const num = value.match(/ *[0-9]+ */g)[0];
-    if (Number.isFinite(num-0)) {
-        if (num.length === value.length) {
-            return num-0;
-        }else {
-            console.log(value +" is not a valid number");
-            return systemValues["NaN"];
-        }
-    }else if (value.match(/("|').+("|')/g) !== null) {
-        let obj = value.match(/("|').+("|')/g)[0];
-        obj = obj.slice(1, obj.length-1);
-        
-        return obj;
-    }else if (Object.entries(values).map(a => a[0]).includes(value)) {
-        return values[value];
-    }else if (Object.entries(systemValues).map(a => a[0]).includes(value)) {
-        return systemValues[value];
-    }
-}
 
 // END OF THE PARSING VALUES PART
 
@@ -468,9 +296,3 @@ const DataTypes = {
     boolean: new DataType().expectedValues(false, true).defaultValue(false),
     undefined: new DataType().expectedValues(undefined).defaultValue(undefined)
 };
-
-// passes over everything
-module.exports = {
-    requestHandler,
-    parseHTSL
-}

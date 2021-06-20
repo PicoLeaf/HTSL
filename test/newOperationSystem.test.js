@@ -71,6 +71,7 @@ function parseOperation(operation) {
     let opperatorsIndex = [];
     
     for (let i = 0; i < operationLength; i++) {
+
         if (operation[i] === "(") {
             let deepness = 0;
             let paretheseContent = "";
@@ -177,7 +178,7 @@ console.timeEnd();
 // instead of one big loop
 // it could make sense
 
-
+/*
 it('unique number', () => {
     expect(parseOperation("9")).toBe(9);
 });
@@ -202,6 +203,22 @@ it('complex operation with parethese', () => {
     expect(parseOperation("(3+2)*5")).toBe(25);
 });
 
-it('complex operation', () => {
-    expect(parseOperation("3+2*5")).toBe(13);
+it('operation with spaces', () => {
+    expect(parseOperation("3 +2 *5")).toBe(13);
 });
+
+it('string manipulation', () => {
+    expect(parseOperation(' "Hello"+" world" ')).toBe("Hello world");
+});
+
+it('string manipulation 2', () => {
+    expect(parseOperation(' "Hello"+\' world\' ')).toBe("Hello world");
+});
+
+it('Incorrect string manipulation', () => {
+    expect(parseOperation(' "Hello"-3 ')).toBe(NaN);
+});
+
+it('Number & string manipulation', () => {
+    expect(parseOperation(' "1"+1 ')).toBe("11");
+});*/
