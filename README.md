@@ -30,7 +30,7 @@ NodeJS is requeried to run this server.
 2. open the terminal at the folder of the project files
 3. you can use `node src/server` or `npm start` to start the server, also, the server create a config file called config.json, in here you can tweak a few options about the server.
 4. You can edit the path to your code in the `path` field in the config.json, any file inside of it can be accessed by anyone visiting the site, for exemple, you can make a file called home.html inside of it which you can acess by going to https://ip:port/home.html
-5. Learn about all of the new feature (here)[]
+5. Learn about all of the new feature [here](FEATURES.md)
 
 ## If you want to dive into my code
 
