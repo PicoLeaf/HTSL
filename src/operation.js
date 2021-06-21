@@ -1,21 +1,29 @@
 const { getValue } = require('./htsl');
 
 // the 2 characters long operator are commented out, simple because those aren't implemented yet
+// the fact that there is .value each time make it a pain to read! All according to plan
+// TODO find a ingenious way to clean it up, like using typeof to get the type
 const operators = [
-    // new Operator("**", (a, b) => a ** b),
-    new Operator("*", (a, b) => a * b),
-    new Operator("/", (a, b) => a / b),
-    new Operator("%", (a, b) => a % b),
-    new Operator("+", (a, b) => a + b),
-    new Operator("-", (a, b) => a - b),
-    // new Operator("&&", (a, b) => a && b),
-    // new Operator("||", (a, b) => a || b),
-    // new Operator("!=", (a, b) => a - b),
-    // new Operator("==", (a, b) => a - b),
-    new Operator(">", (a, b) => a > b),
-    new Operator("<", (a, b) => a < b),
-    // new Operator(">=", (a, b) => a >= b),
-    // new Operator("<=", (a, b) => a <= b),
+    // new Operator("**", (a, b) => a.value ** b.value),
+    new Operator("*", (a, b) => a.value * b.value),
+    new Operator("/", (a, b) => a.value / b.value),
+    new Operator("%", (a, b) => a.value % b.value),
+    new Operator("+", (a, b) => {
+        if (a.type.name === "string" || b.type.name === "string") {
+            return "\""+a.value + b.value+"\"";
+        }else {
+            return a.value + b.value;
+        }
+    }),
+    new Operator("-", (a, b) => a.value - b.value),
+    // new Operator("&&", (a, b) => a.value && b.value),
+    // new Operator("||", (a, b) => a.value || b.value),
+    // new Operator("!=", (a, b) => a.value - b.value),
+    // new Operator("==", (a, b) => a.value - b.value),
+    new Operator(">", (a, b) => a.value > b.value),
+    new Operator("<", (a, b) => a.value < b.value),
+    // new Operator(">=", (a, b) => a.value >= b.value),
+    // new Operator("<=", (a, b) => a.value <= b.value),
 ];
 
 /**
@@ -113,7 +121,7 @@ function parseOperation(operation) {
                 console.log("c:"+c);
                 console.log("d:"+d);
                 if (c !== "" || d !== "") {
-                    parsedOperation = parseOperation(c + operator.execute(getValue(a).value, getValue(b).value) + d).value;
+                    parsedOperation = parseOperation(c + operator.execute(getValue(a), getValue(b)) + d).value;
                     
                     // holly mushroom, seems like a terrible idea
                     // might cause infinite recursion
@@ -121,7 +129,7 @@ function parseOperation(operation) {
                     // UPDATE: it does only when my code is bad, so it should be fine... right?
                     // could be enhanced by moving the cursor to the start of the operation instead, but may produce a infinite loop
                 }else {
-                    parsedOperation = operator.execute(getValue(a).value, getValue(b).value);
+                    parsedOperation = operator.execute(getValue(a), getValue(b));
                 }
             }else if (parsedCharsOnlyOperators.includes(char)) {
                 a = "";

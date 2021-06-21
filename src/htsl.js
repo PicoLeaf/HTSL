@@ -193,7 +193,7 @@ function parseHTSL(lines, url) {
                     final += parseOperation(content).value;
                 }else if (name === "debug") {
                     i += balise.length+name.length+content.length+5;
-                    console.log(parseOperation(content)).value;
+                    console.log(parseOperation(content).value);
                 }else {
                     i += balise.length+2;
                     final += "<"+balise+">";
