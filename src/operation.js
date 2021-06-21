@@ -55,7 +55,6 @@ function parseOperation(operation) {
             
             for (let h = i; !(operation[h] === ")" && deepness === 0) && h < operationLength; h++) {
                 const char = operation[h];
-                console.log(char);
                 
                 if (char === ")") {
                     deepness--;
@@ -71,7 +70,7 @@ function parseOperation(operation) {
                 
             }
             
-            console.log("paretheseContent: "+ paretheseContent);
+            // console.log("paretheseContent: "+ paretheseContent);
 
             parsedOperation += parseOperation(paretheseContent).value;
 
@@ -93,7 +92,7 @@ function parseOperation(operation) {
     const parsedOperators = operators.filter((a , i) => operatorsIndex.includes(i));
     const parsedCharsOnlyOperators = parsedOperators.map(a => a.chars);
 
-    console.log("parsedOperation: "+ parsedOperation);
+    // console.log("parsedOperation: "+ parsedOperation);
     
     var a = "",
         b = "",
@@ -116,10 +115,12 @@ function parseOperation(operation) {
                         d = parsedOperation.slice(h+1, parsedOperationLength);
                     }
                 }
-                console.log("a:"+a);
+                /*console.log("a:"+a);
                 console.log("b:"+b);
                 console.log("c:"+c);
                 console.log("d:"+d);
+                    used for debug purpose
+                */
                 if (c !== "" || d !== "") {
                     parsedOperation = parseOperation(c + operator.execute(getValue(a), getValue(b)) + d).value;
                     
