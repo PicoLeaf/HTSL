@@ -11,10 +11,11 @@ Here is an a simple exemple of what it could look like:
 <!DOCTYPE htsl>
 <html>
     <body>
-        <h1>Hello World!</h1>
-        <if $request.browser == "IE">
-            <p>Poor you...</p>
-        </if>
+        <h1>
+            <value>"Hello"+" world!"</value>
+        </h1>
+    
+        <debug>"This should show in the console each time a page is loaded!"</debug>
     </body>
 </html>
 ```
