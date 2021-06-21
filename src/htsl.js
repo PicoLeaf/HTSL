@@ -1,12 +1,57 @@
 const fs = require('fs');
 
+// on second thought this is a little bit stupid
+const isDefined = el => el !== undefined && el !== null
+
+// these are bassically classes
+const DataTypes = {
+    string: new DataType("string", el => {
+        if (isDefined(el)) {
+            if (typeof el === "string") {
+                return el;
+            }
+            // TODO return a error otherwise
+        }
+    }),
+    number: new DataType("number", el => {
+        if (isDefined(el)) {
+            if (typeof el === "number" && (Number.isFinite(el) || el === NaN)) {
+                return el;
+            }
+            // TODO return a error otherwise
+        }else {
+            return 0;
+        }
+    }),
+    boolean: new DataType("boolean", el => {
+        if (isDefined(el)) {
+            if (typeof el === "boolean") {
+                return el;
+            }
+            // TODO return a error otherwise
+        }else {
+            return false;
+        }
+    }),
+    // the object type is litterally anything, it just holds data
+    object: new DataType("object", (el) => el),
+    undefined: new DataType("unefined", () => undefined)
+};
+
 const values = {};
-const systemValues = {true: true, false: false, undefined: undefined, null: null, NaN: NaN};
+
+const systemValues = {
+    true: new Value(DataTypes.boolean, true),
+    false: new Value(DataTypes.boolean, false),
+    undefined: new Value(DataTypes.undefined, undefined),
+    null: new Value(DataTypes.object, null),
+    NaN: new Value(DataTypes.number, NaN),
+};
 
 /**
 * 
 * @param {string} value 
-* @returns {string}
+* @returns {Value}
 */
 function getValue(value) {
     console.log(value);
@@ -16,16 +61,18 @@ function getValue(value) {
     
     if (Number.isFinite(num-0)) {
         if (num.length === (value+"").length) {
-            return num-0;
+            return new Value(DataTypes.number, num-0);
         }else {
             console.log(value +" is not a valid number");
             return systemValues["NaN"];
         }
     }else if ((value+"").match(/("|').+("|')/g) !== null) {
+        // really not optimal
+        // TODO
         let obj = value.match(/("|').+("|')/g)[0];
         obj = obj.slice(1, obj.length-1);
         
-        return obj;
+        return new Value(DataTypes.string, obj);
     }else if (Object.entries(values).map(a => a[0]).includes(value)) {
         return values[value];
     }else if (Object.entries(systemValues).map(a => a[0]).includes(value)) {
@@ -114,9 +161,10 @@ function parseHTSL(lines, url) {
                 if (name === "if") {
                     i += balise.length+name.length+content.length+5;
                     
-                    if (parseOperation(args[0]) === true) {
+                    if (parseOperation(args[0]).value === true) {
                         final += parseHTSL(content);
-                    }else if (parseOperation(args[0]) !== false) {
+                    }else if (parseOperation(args[0]).value !== false) {
+                        throwError();
                         return new Error(500, "Invalid argument: "+values[args[0]]+" :"+i);
                     }
                 }else if (name === "define") {
@@ -142,10 +190,10 @@ function parseHTSL(lines, url) {
                     
                 }else if (name === "value") {
                     i += balise.length+name.length+content.length+5;
-                    final += parseOperation(content);
+                    final += parseOperation(content).value;
                 }else if (name === "debug") {
                     i += balise.length+name.length+content.length+5;
-                    console.log(parseOperation(content));
+                    console.log(parseOperation(content)).value;
                 }else {
                     i += balise.length+2;
                     final += "<"+balise+">";
@@ -202,10 +250,6 @@ function isEndingBalise(line, pointer, expectedBalise) {
     return false;
 }
 
-// START OF THE PARSING VALUES PART
-
-// END OF THE PARSING VALUES PART
-
 /**
  * 
  * @param {number} num 
@@ -248,51 +292,17 @@ function Opperator(chars, execute) {
 
 function Value(type, value) {
     this.type = type;
-    this.value = value;
+    this.value = type.constructor(value);
 }
 
-function DataType() {
-    this.expectedValues = function(...values) {
-        this.possibleValues = values;
-        this.hasRestrictedValues;
-        return this;
-    }
-    
-    this.range = function(min, max) {
-        this.min = min;
-        this.max = max;
-        this.hasRestrictedRange = true;
-        
-        return this;
-    }
-
-    this.defaultValue = function(value) {
-        this.hasDefaultValue = true;
-
-        // 
-        if (this.hasRestrictedValues && !this.possibleValues.includes(value)) {
-            this.defaultValue = possibleValues[0];
-        }else if (this.hasExpectedType && typeof value !== this.type) {
-            this.hasDefaultValue = false;
-        }else {
-            this.defaultValue = value;
-        }
-        
-        return this;
-    }
-
-    this.expectedType = function(type) {
-        this.expectedType = type;
-        this.hasExpectedType = true;
-        
-        return this;
-    }
+/**
+ * 
+ * @param {string} name 
+ * @param {Function} constructor 
+ */
+function DataType(name, constructor) {
+    this.name = name;
+    this.constructor = constructor;
 }
 
-// these are bassically classes
-const DataTypes = {
-    string: new DataType().defaultValue(""),
-    number: new DataType().range(-65536, 65536).defaultValue(0),
-    boolean: new DataType().expectedValues(false, true).defaultValue(false),
-    undefined: new DataType().expectedValues(undefined).defaultValue(undefined)
-};
+console.log();

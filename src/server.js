@@ -166,4 +166,10 @@ Config.prototype.isValid = function(config) {
         
         return this;
     }
+
+    this.expectedValues = function(...values) {
+        this.possibleValues = values;
+        this.hasRestrictedValues;
+        return this;
+    }
 }

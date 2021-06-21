@@ -1,6 +1,6 @@
 const { getValue } = require('./htsl');
 
-// the 2 characters long operator
+// the 2 characters long operator are commented out, simple because those aren't implemented yet
 const operators = [
     // new Operator("**", (a, b) => a ** b),
     new Operator("*", (a, b) => a * b),
@@ -65,7 +65,7 @@ function parseOperation(operation) {
             
             console.log("paretheseContent: "+ paretheseContent);
 
-            parsedOperation += parseOperation(paretheseContent);
+            parsedOperation += parseOperation(paretheseContent).value;
 
             // the +2 is for the two parentheses
             i += paretheseContent.length+2;
@@ -113,15 +113,15 @@ function parseOperation(operation) {
                 console.log("c:"+c);
                 console.log("d:"+d);
                 if (c !== "" || d !== "") {
-                    parsedOperation = parseOperation(c + operator.execute(getValue(a), getValue(b)) + d);
+                    parsedOperation = parseOperation(c + operator.execute(getValue(a).value, getValue(b).value) + d).value;
                     
                     // holly mushroom, seems like a terrible idea
                     // might cause infinite recursion
 
                     // UPDATE: it does only when my code is bad, so it should be fine... right?
-                    // could be enhanced by moving the cursor to the start of the operation instead, could produce a infinite loop instead 
+                    // could be enhanced by moving the cursor to the start of the operation instead, but may produce a infinite loop
                 }else {
-                    parsedOperation = operator.execute(getValue(a), getValue(b));
+                    parsedOperation = operator.execute(getValue(a).value, getValue(b).value);
                 }
             }else if (parsedCharsOnlyOperators.includes(char)) {
                 a = "";
@@ -135,6 +135,5 @@ function parseOperation(operation) {
 }
 
 module.exports = {
-    parseOperation,
-    getValue
+    parseOperation
 }
