@@ -2,8 +2,6 @@ const fs =  require('fs');
 const http = require('http');
 const { requestHandler } = require('./htsl');
 
-
-// getting the config
 const configFormat = new Config({
     path: new Field('string', './htdocs'),
     host: new Field('string', 'localhost'),
@@ -18,7 +16,6 @@ const oldConfigPath = './old_config.json'
 
 var config = {};
 
-// this sucks, cause it passes over the config each time a page is loaded
 const server = http.createServer((req, res) => {
     requestHandler(req, res, config);
 });
