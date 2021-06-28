@@ -1,11 +1,11 @@
 {
+  "_comment":"Uuuh, after thinking a little I realised that it should be HTPL for HyperTextProgramingLanguage, and not ScriptingLanguage, this is a huge facepalm, but I am just going to go with it hoping noone notices",
   "name": "htsl",
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
     "start": "node --trace-warnings src/server",
-    "test": "jest --verbose",
-    "push": "git add . && read 'Input the commit name: ' NAME && git commit -m \"$NAME\" && git push"
+    "test": "jest --verbose"
   },
   "keywords": [],
   "author": "",
