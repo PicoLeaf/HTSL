@@ -9,18 +9,18 @@ While it is only for readability purposes the doctype of the file should be htsl
 <!DOCTYPE htsl>
 ```
 
-You can print out a value with <debug>:
+You can print out a value with `<debug>`:
 ```html
 <debug>"Value! Yaaay!"</debug>
 ```
 
-You can define a variable with <define>:
+You can define a variable with `<define>`:
 ```html
 <define varName>"varContent"</define>
 ```
 the variable is global, meaning that you can fetch data and change it from different pages.
 
-the variable content can be changed again by calling <define> again
+the variable content can be changed again by calling `<define>` again
 
 You can instantiate system variables by adding the `system` keyword before the name of the variable:
 ```html
@@ -29,7 +29,7 @@ You can instantiate system variables by adding the `system` keyword before the n
 ```
 You should not define system variable
 
-A variable can be printed using the <debug> html element.
+A variable can be printed using the `<debug>` html element.
 
 Here is a list of pre-defined system variable:
 - NaN, type: number
@@ -38,13 +38,13 @@ Here is a list of pre-defined system variable:
 - null, type: object
 - undefined, type: undefined
 
-You can use <if> as a way to test for a boolean value:
+You can use `<if>` as a way to test for a boolean value:
 ```html
 <if true>
     <!-- do stuff -->
 </if>
 ```
-the <if> element will be subject to change soon
+the `<if>` element will be subject to change soon
 
 ## Config documentation
 
@@ -52,9 +52,6 @@ Whenever the server start it will fetch the config file, and create one in case 
 The config file is written in JSON, here are the different fields and their uses:
 
 path: indicates wherever the files are located, by default `./htdocs`
-
 host: the ip to which the server should start at
-
 port: the port to which the server should start at
-
 fileformat: the text format by default `utf-8`
