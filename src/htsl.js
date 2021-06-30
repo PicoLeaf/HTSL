@@ -1,4 +1,5 @@
 const fs = require('fs');
+const HTTPCodes = require('./httpCodes.json');
 
 // on second thought this is a little bit stupid
 const isDefined = el => el !== undefined && el !== null
@@ -75,8 +76,8 @@ function requestHandler(req, res, config) {
     
     fs.readFile(path, (err, data) => {
         if (err) {
-            res.writeHead(ErrorTypes[404].num);
-            res.end(`<h1>Error ${ErrorTypes[404].num}: ${ErrorTypes[404].text}</h1>`);
+            res.writeHead(HTTPCodes[404].num);
+            res.end(`<h1>Error ${HTTPCodes[404].num}: ${HTTPCodes[404].text}</h1>`);
         }else {
             const lines = data.toString(config.fileformat);
             
@@ -128,16 +129,9 @@ function parseHTSL(lines, url) {
 
 
                 if (functions.map(a => a.name).includes(name)) {
-                    functions.find(a => a.name).execute(new ArgumentManager(args), content);
-                }else if (name === "if") {
                     i += balise.length+name.length+content.length+5;
-                    
-                    if (parseOperation(args[0]).value === true) {
-                        final += parseHTSL(content);
-                    }else if (parseOperation(args[0]).value !== false) {
-                        throwError();
-                        return new Error(500, "Invalid argument: "+values[args[0]]+" :"+i);
-                    }
+                    const result = functions.find(a => a.name === name).execute(new ArgumentManager(args), content);
+                    final += result !== undefined? result.value : "";
                 }else if (name === "define") {
                     if (args[0] === "system") {
                         if (args[1]) {
@@ -159,12 +153,6 @@ function parseHTSL(lines, url) {
                     }
                     i += balise.length+name.length+content.length+5;
                     
-                }else if (name === "value") {
-                    i += balise.length+name.length+content.length+5;
-                    final += parseOperation(content).value;
-                }else if (name === "debug") {
-                    i += balise.length+name.length+content.length+5;
-                    console.log(parseOperation(content).value);
                 }else if (name === "new") {
                     if (args[0] && DataTypes[args[0]]) {
                         i += balise.length+name.length+content.length+5;
@@ -233,7 +221,7 @@ function isEndingBalise(line, pointer, expectedBalise) {
 * @returns {Value}
 */
 function getValue(value) {
-    // console.log(value);
+    console.log(value);
 
     let num = (value+"").match(/ *[0-9]+ */g);
     num = num === null? NaN: num[0];
@@ -250,10 +238,10 @@ function getValue(value) {
         const obj = value.matchAll(/("|').*?\1/g).next().value[0];
 
         return new Value(DataTypes.string, obj.slice(1, obj.length-1));
-    }else if (Object.entries(values).map(a => a[0]).includes(value)) {
-        return values[value];
-    }else if (Object.entries(systemValues).map(a => a[0]).includes(value)) {
-        return systemValues[value];
+    }else if (Object.entries(values).map(a => a[0]).includes(value+"".trim())) {
+        return values[value.trim()];
+    }else if (Object.entries(systemValues).map(a => a[0]).includes(value+"".trim())) {
+        return systemValues[value+"".trim()];
     }
 }
 
@@ -264,25 +252,9 @@ function getValue(value) {
  * @param {number} char 
  */
 function Error(num, err, char) {
-    this.type = ErrorTypes[num];
+    this.type = HTTPCodes[num];
     this.err = err;
     this.char = char;
-}
-
-/**
- * 
- * @param {number} num 
- * @param {string} text 
- */
-function ErrorType(num, text) {
-    this.num = num;
-    this.text = text;
-}
-
-const ErrorTypes = {
-    200: new ErrorType(200, "OK"),
-    500: new ErrorType(500, "Internal Server Error"),
-    404: new ErrorType(404, "File Not Found")
 }
 
 function Value(type, value) {
@@ -308,7 +280,7 @@ function ArgumentManager(args) {
     this.args = args;
 
     this.getArgumentByName = function(argName) {
-        this.args.find(o => o.toLowerCase() === argName.toLowerCase);
+        return this.args.find(o => o.toLowerCase() === argName.toLowerCase());
     }
 
     this.getArgumentByIndex = function(argIndex) {
@@ -333,10 +305,9 @@ function Func(name, content, arguments, isHTSL) {
      * 
      * @param {ArgumentManager} argManager 
      * @param {string} voidContent 
-     * @returns 
+     * @returns {Value}
      */
     this.execute = function(argManager, voidContent) {
-        console.log(this.content.toString());
         if (isHTSL) {
             // TODO make it work, this will not work since the parseHTSL function is not made to be a function environment, meaning that stuff such as <return> will not work
             return parseHTSL(this.content);
@@ -362,15 +333,20 @@ function Argument(name, optional, hasValue, type) {
 
 const functions = [
     new Func("debug", (args, content) => {
-        if (args.getArgumentByName("client")) {
-            return `<script>console.log(${ParseHTSL(content)});</script>`;
-        }else {
-            console.log(parseHTSL(content));
-            return "";
+        console.log(parseHTSL(parseOperation(content).value));
+    }),
+    new Func("value", (args, content) => {
+        return parseOperation(content);
+    }),
+    new Func("if", (args, content) => {
+        content = content.split("<then>");
+
+        if (content[0] && content[1]) {
+            if (parseOperation(content[0]).value === true) {
+                return new Value(DataTypes.string, content[1]);
+            }
         }
-    }, [ new Argument("client", true) ]),
-    // new Func(),
-    // new Func(),
+    }),
     // new Func(),
     // new Func()
 ];
