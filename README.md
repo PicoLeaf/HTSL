@@ -1,7 +1,5 @@
 # HTSL
 
-HTSL stands for HyperText Scripting Language
-
 My goal is create a HTML-like programming language
 
 
@@ -15,7 +13,11 @@ Here is an a simple exemple of what it could look like:
             <value>"Hello"+" world!"</value>
         </h1>
     
-        <debug>"This should show in the console each time a page is loaded!"</debug>
+        <debug>"This should show in the console each time the page is loaded!"</debug>
+
+        <if>age > 17<then>
+            <h2>You are legally allowed to drive a car. sweet!</h2>
+        </if>
     </body>
 </html>
 ```
