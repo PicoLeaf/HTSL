@@ -4,7 +4,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node --trace-warnings src/server",
-    "test": "jest --verbose"
+    "test": "jest"
   },
   "keywords": [],
   "author": "",

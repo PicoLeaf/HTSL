@@ -39,7 +39,7 @@ const DataTypes = {
     undefined: new DataType("undefined", () => undefined)
 };
 
-const values = {};
+let values = {};
 
 const systemValues = {
     true: new Value(DataTypes.boolean, true),
@@ -52,11 +52,10 @@ const systemValues = {
 // passes over everything
 module.exports = {
     requestHandler,
-    parseHTSL,
-    getValue
+    parseHTSL
 }
 
-const { parseOperation } = require('./operation');
+const solveOperation = require('./operation')(getValue);
 
 const singleBalises = ["meta", "br"];
 
@@ -76,8 +75,8 @@ function requestHandler(req, res, config) {
     
     fs.readFile(path, (err, data) => {
         if (err) {
-            res.writeHead(HTTPCodes[404].num);
-            res.end(`<h1>Error ${HTTPCodes[404].num}: ${HTTPCodes[404].text}</h1>`);
+            res.writeHead(HTTPCodes[404].code);
+            res.end(`<h1>Error ${HTTPCodes[404].code}: ${HTTPCodes[404].message}</h1>`);
         }else {
             const lines = data.toString(config.fileformat);
             
@@ -128,35 +127,22 @@ function parseHTSL(lines, url) {
                 }
 
 
-                if (functions.map(a => a.name).includes(name)) {
+                if (macros.map(a => a.name).includes(name)) {
                     i += balise.length+name.length+content.length+5;
-                    const result = functions.find(a => a.name === name).execute(new ArgumentManager(args), content);
+                    const result = macros.find(a => a.name === name).execute(new ArgumentManager(args), content);
                     final += result !== undefined? result.value : "";
                 }else if (name === "define") {
-                    if (args[0] === "system") {
-                        if (args[1]) {
-                            if (Object.entries(systemValues).map(a => a[0]).includes(args[1])) {
-                                return new Error(500, "Cannot override the system variable \""+systemValues[args[1]]+"\" :"+i);
-                            }else {
-                                console.log(args[1]);
-                                systemValues[args[1]] = parseOperation(parseHTSL(content));
-                            }
-                        }else {
-                            return new Error(500, "Unable to define a variable called \"system\" "+values[args[0]]+" :"+i);
-                        }
+                    if (Object.entries(systemValues).map(a => a[0]).includes(args[0])) {
+                        return new Error(500, "The variable "+args[0]+" is already used by a system variable :"+(i));
                     }else {
-                        if (Object.entries(systemValues).map(a => a[0]).includes(args[0])) {
-                            return new Error(500, "The variable "+args[0]+" is already used by a system variable :"+(i/*-3-content.length-args.join(' ').length*/));
-                        }else {
-                            values[args[0]] = parseOperation(parseHTSL(content));
-                        }
+                        values[args[0]] = solveOperation(parseHTSL(content));
                     }
                     i += balise.length+name.length+content.length+5;
                     
                 }else if (name === "new") {
                     if (args[0] && DataTypes[args[0]]) {
                         i += balise.length+name.length+content.length+5;
-                        final += DataTypes[args[0]].constructor(parseOperation(content).value);
+                        final += DataTypes[args[0]].constructor(solveOperation(content).value);
                     }
                     // TODO throw a error when no arguments
                 }else {
@@ -177,7 +163,8 @@ function parseHTSL(lines, url) {
         }
         final += lines.charAt(i);
     }
-    
+    values = {};
+
     return final;
 }
 
@@ -221,8 +208,6 @@ function isEndingBalise(line, pointer, expectedBalise) {
 * @returns {Value}
 */
 function getValue(value) {
-    console.log(value);
-
     let num = (value+"").match(/ *[0-9]+ */g);
     num = num === null? NaN: num[0];
     
@@ -264,19 +249,9 @@ function Value(type, value) {
 
 /**
  * 
- * @param {string} name 
- * @param {Function} constructor 
- */
-function DataType(name, constructor) {
-    this.name = name;
-    this.constructor = constructor;
-}
-
-/**
- * 
  * @param {string[]} args 
  */
-function ArgumentManager(args) {
+ function ArgumentManager(args) {
     this.args = args;
 
     this.getArgumentByName = function(argName) {
@@ -291,11 +266,35 @@ function ArgumentManager(args) {
 /**
  * 
  * @param {string} name 
+ * @param {Function} constructor 
+ */
+ function DataType(name, constructor) {
+    this.name = name;
+    this.constructor = constructor;
+}
+
+/**
+ * 
+ * @param {string} name 
+ * @param {boolean} optional 
+ * @param {boolean} hasValue 
+ * @param {DataType} type 
+ */
+ function Argument(name, optional, hasValue, type) {
+    this.name = name;
+    this.optional = optional;
+    this.hasValue = hasValue;
+    this.type = type;
+}
+
+/**
+ * 
+ * @param {string} name 
  * @param {Function} content 
  * @param {Argument[]} arguments
  * @param {boolean} isHTSL 
  */
-function Func(name, content, arguments, isHTSL) {
+ function Macro(name, content, arguments, isHTSL) {
     this.name = name;
     this.content = content;
     this.arguments = arguments;
@@ -317,36 +316,20 @@ function Func(name, content, arguments, isHTSL) {
     }
 }
 
-/**
- * 
- * @param {string} name 
- * @param {boolean} optional 
- * @param {boolean} hasValue 
- * @param {DataType} type 
- */
-function Argument(name, optional, hasValue, type) {
-    this.name = name;
-    this.optional = optional;
-    this.hasValue = hasValue;
-    this.type = type;
-}
-
-const functions = [
-    new Func("debug", (args, content) => {
-        console.log(parseHTSL(parseOperation(content).value));
+const macros = [
+    new Macro("debug", (args, content) => {
+        console.log(parseHTSL(solveOperation(content).value));
     }),
-    new Func("value", (args, content) => {
-        return parseOperation(content);
+    new Macro("value", (args, content) => {
+        return solveOperation(content);
     }),
-    new Func("if", (args, content) => {
+    new Macro("if", (args, content) => {
         content = content.split("<then>");
 
         if (content[0] && content[1]) {
-            if (parseOperation(content[0]).value === true) {
+            if (solveOperation(content[0]).value === true) {
                 return new Value(DataTypes.string, content[1]);
             }
         }
     }),
-    // new Func(),
-    // new Func()
 ];
